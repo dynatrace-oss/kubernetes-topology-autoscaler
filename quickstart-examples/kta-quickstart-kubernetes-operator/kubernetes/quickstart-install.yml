@@ -1,0 +1,425 @@
+---
+apiVersion: "apiextensions.k8s.io/v1"
+kind: "CustomResourceDefinition"
+metadata:
+  name: "ktapolicies.research.dynatrace.com"
+spec:
+  group: "research.dynatrace.com"
+  names:
+    kind: "KtaPolicy"
+    plural: "ktapolicies"
+    singular: "ktapolicy"
+  scope: "Namespaced"
+  versions:
+  - name: "v1alpha1"
+    schema:
+      openAPIV3Schema:
+        properties:
+          spec:
+            properties:
+              behavior:
+                description: "Policy behavior."
+                properties:
+                  maxParallelism:
+                    default: 2147483647
+                    description: "Maximum parallelism of each topology node. Must\
+                      \ be greater than or equal to the minimum parallelism."
+                    type: "integer"
+                  minParallelism:
+                    default: 1
+                    description: "Minimum parallelism of each topology node."
+                    type: "integer"
+                  reconciliationIntervalSeconds:
+                    default: 30
+                    description: "Reconciliation interval in seconds."
+                    type: "integer"
+                  resultHistoryLength:
+                    default: 2147483647
+                    description: "Maximum number of past results that are provided\
+                      \ to UDFs."
+                    type: "integer"
+                  scaleDownStrategy:
+                    description: "Strategy that should be applied when the plan UDF\
+                      \ triggers a scale down. Default: NoStrategy"
+                    properties:
+                      args:
+                        description: "Arguments that configure the scale strategy.\
+                          \ Arguments are always passed as string. The format and\
+                          \ semantics of the arguments differ based on the scale strategy."
+                        type: "string"
+                      type:
+                        description: "Scale strategy."
+                        enum:
+                        - "NoStrategy"
+                        type: "string"
+                    required:
+                    - "type"
+                    type: "object"
+                  scaleUpStrategy:
+                    description: "Strategy that should be applied when the plan UDF\
+                      \ triggers a scale up. Default: NoStrategy"
+                    properties:
+                      args:
+                        description: "Arguments that configure the scale strategy.\
+                          \ Arguments are always passed as string. The format and\
+                          \ semantics of the arguments differ based on the scale strategy."
+                        type: "string"
+                      type:
+                        description: "Scale strategy."
+                        enum:
+                        - "NoStrategy"
+                        type: "string"
+                    required:
+                    - "type"
+                    type: "object"
+                  udfs:
+                    description: "UDFs of the autoscaling algorithm."
+                    properties:
+                      analyzeEndpoint:
+                        description: "Analyze UDF endpoint. Pattern: ^(http|https).*"
+                        type: "string"
+                      monitorEndpoint:
+                        description: "Monitor UDF endpoint. Pattern: ^(http|https).*"
+                        type: "string"
+                      planEndpoint:
+                        description: "Plan UDF endpoint. Pattern: ^(http|https).*"
+                        type: "string"
+                    required:
+                    - "monitorEndpoint"
+                    - "planEndpoint"
+                    type: "object"
+                required:
+                - "udfs"
+                type: "object"
+              scaleDriver:
+                description: "Scale Driver. Different fields may be required, depending\
+                  \ on the type. These fields are marked with `n/a`. Check the description\
+                  \ to see if the field is required for a specific Scale Driver. Currently,\
+                  \ a Scale Driver **must not** be updated."
+                properties:
+                  flinkJobDeploymentType:
+                    description: "Flink job deployment type to determine the required\
+                      \ number of task manager deployments. Required for `Flink` Scale\
+                      \ Driver. "
+                    enum:
+                    - "SharedTaskSlots"
+                    - "StreamingGraphNodePerTaskSlot"
+                    type: "string"
+                  flinkJobId:
+                    description: "ID of the job to be scaled. Required for `Flink`\
+                      \ Scale Driver. "
+                    type: "string"
+                  flinkJobManagerBaseUrl:
+                    description: "Job manager base URL. Required for `Flink` Scale\
+                      \ Driver. Pattern: ^(http|https).*"
+                    type: "string"
+                  flinkTaskManagerDeploymentName:
+                    description: "Name of the task manager deployment (Kubernetes\
+                      \ API version: v1) to automatically scale the number of task\
+                      \ managers with the parallelism. Each task manager must contain\
+                      \ only a single task slot, this is, one task manager with 1\
+                      \ slot maps to a single replica of the deployment. If not set,\
+                      \ the number of task managers has to be scaled externally, e.g.,\
+                      \ by using the Flink Kubernetes Operator."
+                    type: "string"
+                  flinkTopology:
+                    description: "Topology nodes (Flink Streaming Graph Nodes) in\
+                      \ topologically sorted order. Required for `Flink` Scale Driver. "
+                    items:
+                      properties:
+                        id:
+                          description: "Operator ID."
+                          type: "string"
+                      required:
+                      - "id"
+                      type: "object"
+                    type: "array"
+                  genericKubernetesTopology:
+                    description: "Topology nodes in topologically sorted order. Required\
+                      \ for `GenericKubernetes` Scale Driver. "
+                    items:
+                      properties:
+                        kind:
+                          description: "Kubernetes resource kind. Kubernetes API versions:\
+                            \ Deployment -- v1."
+                          enum:
+                          - "Deployment"
+                          type: "string"
+                        name:
+                          description: "Kubernetes resource name."
+                          type: "string"
+                      required:
+                      - "kind"
+                      - "name"
+                      type: "object"
+                    type: "array"
+                  type:
+                    description: "Scale driver type."
+                    enum:
+                    - "Flink"
+                    - "GenericKubernetes"
+                    type: "string"
+                required:
+                - "type"
+                type: "object"
+            required:
+            - "behavior"
+            - "scaleDriver"
+            type: "object"
+          status:
+            properties:
+              error:
+                type: "boolean"
+              id:
+                type: "string"
+              result:
+                type: "string"
+              state:
+                enum:
+                - "Completed"
+                - "Execute"
+                - "Init"
+                - "Knowledge"
+                - "MonitorAnalyzePlan"
+                - "New"
+                type: "string"
+              udfResult:
+                type: "string"
+            type: "object"
+        type: "object"
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    app.quarkus.io/quarkus-version: 3.24.2
+    app.quarkus.io/vcs-uri: https://github.com/dynatrace-oss/kubernetes-topology-autoscaler.git
+  labels:
+    app.kubernetes.io/name: kta-kubernetes-operator
+    app.kubernetes.io/managed-by: quarkus
+  name: kta-kubernetes-operator
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: kta-kubernetes-operator
+    app.kubernetes.io/version: 0.1.0-alpha.1
+  name: kta-deployment-role
+rules:
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - deployments/scale
+    verbs:
+      - get
+      - update
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: kta-kubernetes-operator
+    app.kubernetes.io/version: 0.1.0-alpha.1
+  name: ktareconciler-cluster-role
+rules:
+  - apiGroups:
+      - research.dynatrace.com
+    resources:
+      - ktapolicies
+      - ktapolicies/status
+      - ktapolicies/finalizers
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - update
+      - create
+      - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: kta-kubernetes-operator
+    app.kubernetes.io/version: 0.1.0-alpha.1
+  name: josdk-crd-validating-cluster-role
+rules:
+  - apiGroups:
+      - apiextensions.k8s.io
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - get
+      - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/name: kta-kubernetes-operator
+    app.kubernetes.io/version: 0.1.0-alpha.1
+  name: ktareconciler-crd-validating-role-binding
+roleRef:
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+  name: josdk-crd-validating-cluster-role
+subjects:
+  - kind: ServiceAccount
+    name: kta-kubernetes-operator
+    namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/name: kta-kubernetes-operator
+    app.kubernetes.io/version: 0.1.0-alpha.1
+  name: ktareconciler-cluster-role-binding
+roleRef:
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+  name: ktareconciler-cluster-role
+subjects:
+  - kind: ServiceAccount
+    name: kta-kubernetes-operator
+    namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/name: kta-kubernetes-operator
+    app.kubernetes.io/version: 0.1.0-alpha.1
+  name: kta-deployment-role-binding
+roleRef:
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+  name: kta-deployment-role
+subjects:
+  - kind: ServiceAccount
+    name: kta
+    namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    app.quarkus.io/quarkus-version: 3.24.2
+    app.quarkus.io/vcs-uri: https://github.com/dynatrace-oss/kubernetes-topology-autoscaler.git
+  labels:
+    app.kubernetes.io/name: kta-kubernetes-operator
+    app.kubernetes.io/managed-by: quarkus
+  name: kta-kubernetes-operator
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+  name: kta-deployment-role
+subjects:
+  - kind: ServiceAccount
+    name: kta-kubernetes-operator
+    namespace: default
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    app.quarkus.io/quarkus-version: 3.24.2
+    app.quarkus.io/vcs-uri: https://github.com/dynatrace-oss/kubernetes-topology-autoscaler.git
+  labels:
+    app.kubernetes.io/name: kta-kubernetes-operator
+    app.kubernetes.io/managed-by: quarkus
+  name: kta-kubernetes-operator
+  namespace: default
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app.kubernetes.io/name: kta-kubernetes-operator
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    app.quarkus.io/quarkus-version: 3.24.2
+    app.quarkus.io/vcs-uri: https://github.com/dynatrace-oss/kubernetes-topology-autoscaler.git
+  labels:
+    app.kubernetes.io/name: kta-kubernetes-operator
+    app.kubernetes.io/managed-by: quarkus
+  name: kta-kubernetes-operator
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kta-kubernetes-operator
+  template:
+    metadata:
+      annotations:
+        app.quarkus.io/quarkus-version: 3.24.2
+        app.quarkus.io/vcs-uri: https://github.com/dynatrace-oss/kubernetes-topology-autoscaler.git
+      labels:
+        app.kubernetes.io/managed-by: quarkus
+        app.kubernetes.io/name: kta-kubernetes-operator
+    spec:
+      # TODO: remove
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - env:
+            - name: KUBERNETES_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          # TODO: Change on new release
+          image: ghcr.io/dynatrace-oss/kta-kubernetes-operator:v0.1.0-alpha.1-dev.1
+          imagePullPolicy: Always
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /q/health/live
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+          name: kta-kubernetes-operator
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /q/health/ready
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+          startupProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /q/health/started
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+      serviceAccountName: kta-kubernetes-operator

@@ -1,0 +1,47 @@
+name: Build KTA Kubernetes Operator
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'kta-kubernetes-operator/**'
+  pull_request:
+    paths:
+      - 'kta-kubernetes-operator/**'
+
+jobs:
+  build:
+    name: Build with Java ${{ matrix.java }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [17, 21]
+
+    defaults:
+      run:
+        working-directory: kta-kubernetes-operator
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ matrix.java }}
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-java${{ matrix.java }}-gradle-${{ hashFiles('**/*.gradle') }}
+          restore-keys: |
+            ${{ runner.os }}-java${{ matrix.java }}-gradle-${{ hashFiles('**/*.gradle') }}
+            ${{ runner.os }}-java${{ matrix.java }}-gradle-
+
+      - name: Build
+        run: ./gradlew build

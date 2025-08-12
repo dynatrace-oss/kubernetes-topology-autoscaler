@@ -1,0 +1,181 @@
+name: Publish KTA container images to GHCR
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  kta-kubernetes-operator:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Create version tag
+      run: |
+        TAG="${{ github.event.release.tag_name }}"
+        TAG="${TAG#v}"
+        echo "VERSION_TAG=$TAG" >> "$GITHUB_ENV"
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: 17
+
+    - name: Cache Gradle packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-java17-gradle-${{ hashFiles('**/*.gradle') }}
+        restore-keys: |
+          ${{ runner.os }}-java17-gradle-${{ hashFiles('**/*.gradle') }}
+          ${{ runner.os }}-java17-gradle-
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and push container image
+      working-directory: ./kta-kubernetes-operator
+      run: ./gradlew clean build -PprojVersion=$VERSION_TAG -Dquarkus.container-image.build=true -Dquarkus.container-image.push=true -Dquarkus.container-image.image=ghcr.io/${{ github.repository_owner }}/kta-kubernetes-operator:${{ github.event.release.tag_name }}
+
+
+  kta-quickstart-python-sdk:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Create version tag
+      run: |
+        TAG="${{ github.event.release.tag_name }}"
+        TAG="${TAG#v}"
+        TAG="${TAG//-/.}"
+        TAG="${TAG//.alpha./.alpha}"
+        TAG="${TAG//.dev./.dev}"
+        echo "VERSION_TAG=$TAG" >> "$GITHUB_ENV"
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.12
+
+    - name: Install uv
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+
+    - name: Bump version and build dependencies
+      working-directory: ./kta-python-sdk
+      run: |
+        uvx --from=toml-cli toml set --toml-path=pyproject.toml project.version "$VERSION_TAG"
+        uv build --wheel --out-dir ../quickstart-examples/kta-quickstart-python-sdk/dependencies/
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and push container image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./quickstart-examples/kta-quickstart-python-sdk
+        file: ./quickstart-examples/kta-quickstart-python-sdk/docker/Dockerfile
+        push: true
+        build-args: |
+          PROJ_VERSION=$VERSION_TAG
+        tags: ghcr.io/${{ github.repository_owner }}/kta-quickstart-python-sdk:${{ github.event.release.tag_name }}
+
+  kta-quickstart-flink:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Create version tag
+      run: |
+        TAG="${{ github.event.release.tag_name }}"
+        TAG="${TAG#v}"
+        echo "VERSION_TAG=$TAG" >> "$GITHUB_ENV"
+        
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and push container image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./quickstart-examples/kta-quickstart-stream-processing-systems/kta-quickstart-flink
+        file: ./quickstart-examples/kta-quickstart-stream-processing-systems/kta-quickstart-flink/docker/Dockerfile
+        push: true
+        build-args: |
+          PROJ_VERSION=$VERSION_TAG
+        tags: ghcr.io/${{ github.repository_owner }}/kta-quickstart-flink:${{ github.event.release.tag_name }}
+
+  kta-quickstart-kstreams:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Create version tag
+      run: |
+        TAG="${{ github.event.release.tag_name }}"
+        TAG="${TAG#v}"
+        echo "VERSION_TAG=$TAG" >> "$GITHUB_ENV"
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and push container image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./quickstart-examples/kta-quickstart-stream-processing-systems/kta-quickstart-kstreams
+        file: ./quickstart-examples/kta-quickstart-stream-processing-systems/kta-quickstart-kstreams/docker/Dockerfile
+        push: true
+        build-args: |
+          PROJ_VERSION=$VERSION_TAG
+        tags: ghcr.io/${{ github.repository_owner }}/kta-quickstart-kstreams:${{ github.event.release.tag_name }}

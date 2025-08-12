@@ -3,3 +3,6 @@ MD013: false
 
 # punctuation in headings
 MD026: false
+
+# no emphasis as heading
+MD036: false

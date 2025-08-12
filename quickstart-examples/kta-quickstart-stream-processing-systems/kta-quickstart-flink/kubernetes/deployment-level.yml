@@ -1,0 +1,145 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kta-quickstart-flink-config
+  labels:
+    app: flink
+data:
+  flink-conf.yaml: |+
+    jobmanager.rpc.address: kta-quickstart-flink-jobmanager
+    taskmanager.numberOfTaskSlots: 1
+    blob.server.port: 6124
+    jobmanager.rpc.port: 6123
+    taskmanager.rpc.port: 6122
+    jobmanager.memory.process.size: 1024m
+    taskmanager.memory.process.size: 1024m
+    parallelism.default: 2
+    # Needed to automatically scale to the number of available TaskManagers
+    scheduler-mode: reactive
+    # Lower timeout, otherwise downscaling takes up to 50s
+    # See https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/deployment/elastic_scaling/#recommendations
+    heartbeat.timeout: 5000
+    heartbeat.interval: 2500
+  log4j-console.properties: |+
+    rootLogger.level = INFO
+    rootLogger.appenderRef.console.ref = ConsoleAppender
+    appender.console.name = ConsoleAppender
+    appender.console.type = CONSOLE
+    appender.console.layout.type = PatternLayout
+    appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss,SSS} %-5p %-60c %x - %m%n
+    logger.netty.name = org.jboss.netty.channel.DefaultChannelPipeline
+    logger.netty.level = OFF
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kta-quickstart-flink-jobmanager
+spec:
+  template:
+    metadata:
+      labels:
+        app: flink
+        component: jobmanager
+    spec:
+      restartPolicy: OnFailure
+      # TODO: remove
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - name: jobmanager
+          # TODO: Change on new release
+          image: ghcr.io/dynatrace-oss/kta-quickstart-flink:v0.1.0-alpha.1-dev.1
+          imagePullPolicy: Always
+          env:
+          args: ["standalone-job", "--job-id", "caf3caf3caf3caf3caf3caf3caf3caf3", "--job-classname", "com.dynatrace.research.kta.example.flink.WordCount", "shared-task-slots", "500"]
+          ports:
+            - containerPort: 6123
+              name: rpc
+            - containerPort: 6124
+              name: blob-server
+            - containerPort: 8081
+              name: webui
+          livenessProbe:
+            tcpSocket:
+              port: 6123
+            initialDelaySeconds: 30
+            periodSeconds: 60
+          volumeMounts:
+            - name: flink-config-volume
+              mountPath: /opt/flink/conf
+          securityContext:
+            runAsUser: 9999  # refers to user _flink_ from official flink image, change if necessary
+      volumes:
+        - name: flink-config-volume
+          configMap:
+            name: kta-quickstart-flink-config
+            items:
+              - key: flink-conf.yaml
+                path: flink-conf.yaml
+              - key: log4j-console.properties
+                path: log4j-console.properties
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kta-quickstart-flink-jobmanager
+spec:
+  type: ClusterIP
+  ports:
+    - name: rpc
+      port: 6123
+    - name: blob-server
+      port: 6124
+    - name: webui
+      port: 8081
+  selector:
+    app: flink
+    component: jobmanager
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kta-quickstart-flink-taskmanager
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: flink
+      component: taskmanager
+  template:
+    metadata:
+      labels:
+        app: flink
+        component: taskmanager
+    spec:
+      # TODO: remove
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - name: taskmanager
+          # TODO: Change on new release
+          image: ghcr.io/dynatrace-oss/kta-quickstart-flink:v0.1.0-alpha.1-dev.1
+          imagePullPolicy: Always
+          args: ["taskmanager"]
+          ports:
+            - containerPort: 6122
+              name: rpc
+          livenessProbe:
+            tcpSocket:
+              port: 6122
+            initialDelaySeconds: 30
+            periodSeconds: 60
+          volumeMounts:
+            - name: flink-config-volume
+              mountPath: /opt/flink/conf/
+          securityContext:
+            runAsUser: 9999  # refers to user _flink_ from official flink image, change if necessary
+      volumes:
+        - name: flink-config-volume
+          configMap:
+            name: kta-quickstart-flink-config
+            items:
+              - key: flink-conf.yaml
+                path: flink-conf.yaml
+              - key: log4j-console.properties
+                path: log4j-console.properties

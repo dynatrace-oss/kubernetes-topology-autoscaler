@@ -1,0 +1,16 @@
+apiVersion: research.dynatrace.com/v1alpha1
+kind: KtaPolicy
+metadata:
+  name: kta-quickstart-policy-kstreams-deployment-level
+spec:
+  scaleDriver:
+    type: GenericKubernetes
+    genericKubernetesTopology: 
+      - kind: "Deployment"
+        name: "kta-quickstart-kstreams-tokenizer-counter"
+  behavior:
+    reconciliationIntervalSeconds: 30
+    udfs:
+      monitorEndpoint: http://kta-quickstart-algorithm.default.svc.cluster.local:8096/api/v1alpha1/monitor
+      analyzeEndpoint: http://kta-quickstart-algorithm.default.svc.cluster.local:8096/api/v1alpha1/analyze
+      planEndpoint: http://kta-quickstart-algorithm.default.svc.cluster.local:8096/api/v1alpha1/plan

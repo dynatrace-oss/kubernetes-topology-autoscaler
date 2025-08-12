@@ -1,0 +1,60 @@
+name: Build KTA Python SDK
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'kta-python-sdk/**'
+  pull_request:
+    paths:
+      - 'kta-python-sdk/**'
+
+jobs:
+  build:
+    name: Build with Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: [3.12, 3.13]
+
+    defaults:
+      run:
+        working-directory: kta-python-sdk
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python }}
+
+    - name: Install uv
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+
+    - name: Set up virtual environment and install dependencies
+      run: |
+        uv sync --all-extras --python-preference=only-system
+
+    - name: Lint
+      run: |
+        source .venv/bin/activate
+        uv run ruff check src test
+
+    - name: Static type check
+      run: |
+        source .venv/bin/activate
+        uv run mypy src
+
+    - name: Test
+      run: |
+        source .venv/bin/activate
+        uv run pytest test
+
+    - name: Build
+      run: |
+        source .venv/bin/activate
+        uv build

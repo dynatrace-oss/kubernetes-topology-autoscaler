@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kta-quickstart-algorithm
+spec:
+  selector:
+    matchLabels:
+      app: kta
+      component: algorithm
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: kta
+        component: algorithm
+    spec:
+      terminationGracePeriodSeconds: 0
+      containers:
+        - name: app
+          # TODO: Change on new release
+          image: ghcr.io/dynatrace-oss/kta-quickstart-python-sdk:v0.1.0-alpha.1-dev.1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8096
+              name: http
+      # TODO: remove
+      imagePullSecrets:
+        - name: ghcr-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kta-quickstart-algorithm
+  labels:
+    app: kta
+spec:
+  selector:
+    app: kta
+    component: algorithm
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8096

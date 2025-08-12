@@ -1,0 +1,4 @@
+rootProject.name = 'kta-quickstart-stream-processing-systems'
+
+includeBuild 'kta-quickstart-flink'
+includeBuild 'kta-quickstart-kstreams'

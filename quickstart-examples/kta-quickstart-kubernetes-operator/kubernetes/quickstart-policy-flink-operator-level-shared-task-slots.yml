@@ -1,0 +1,22 @@
+apiVersion: research.dynatrace.com/v1alpha1
+kind: KtaPolicy
+metadata:
+  name: kta-quickstart-policy-flink-operator-level-shared-task-slots
+spec:
+  scaleDriver:
+    type: Flink
+    flinkJobManagerBaseUrl: http://kta-quickstart-flink-jobmanager.default.svc.cluster.local:8081
+    flinkJobId: "caf3caf3caf3caf3caf3caf3caf3caf3"
+    flinkJobDeploymentType: SharedTaskSlots
+    flinkTaskManagerDeploymentName: kta-quickstart-flink-taskmanager
+    # Can be obtained by  http://kta-quickstart-flink-jobmanager.default.svc.cluster.local:8081/jobs/caf3caf3caf3caf3caf3caf3caf3caf3
+    # Must be in topologically sorted order!
+    flinkTopology: 
+      - id: "cbc357ccb763df2852fee8c4fc7d55f2"
+      - id: "0da08f51eaa85fc298e176a139b3649a"
+  behavior:
+    reconciliationIntervalSeconds: 30
+    udfs:
+      monitorEndpoint: http://kta-quickstart-algorithm.default.svc.cluster.local:8096/api/v1alpha1/monitor
+      analyzeEndpoint: http://kta-quickstart-algorithm.default.svc.cluster.local:8096/api/v1alpha1/analyze
+      planEndpoint: http://kta-quickstart-algorithm.default.svc.cluster.local:8096/api/v1alpha1/plan

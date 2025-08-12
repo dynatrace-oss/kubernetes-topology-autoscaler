@@ -1,0 +1,110 @@
+[project]
+name = "kta-python-sdk"
+# TODO: Change on new release
+version = "0.1.0.alpha1.dev0"
+description = "Kubernetes Topology Autoscaler (KTA) Python SDK"
+authors = [
+  {name = "Dynatrace Research"},
+]
+maintainers = [
+  {name = "Michael Koepf", email = "michael.koepf@dyntrace.com"},
+]
+license = "Apache-2.0"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+keywords = ["autoscaling", "self-adaptive-systems", "stream-processing", "kubernetes"]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.10.6",
+]
+
+[project.urls]
+Homepage = "https://dynatrace-oss.github.io/kubernetes-topology-autoscaler/"
+Documentation = "https://dynatrace-oss.github.io/kubernetes-topology-autoscaler/api-reference/"
+Repository = "https://github.com/dynatrace-oss/kubernetes-topology-autoscaler.git"
+"Bug Tracker" = "https://github.com/dynatrace-oss/kubernetes-topology-autoscaler/issues"
+Changelog = "https://dynatrace-oss.github.io/kubernetes-topology-autoscaler/release-notes/"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.optional-dependencies]
+ # TODO: use as default extra when PEP 771 is implemented (see https://peps.python.org/pep-0771/)
+http-backend = [
+    "fastapi>=0.115.8",
+    "uvicorn>=0.34.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "mypy>=1.14.1",
+    "pytest>=8.3.4",
+    "pyyaml>=6.0.2",
+    # needed to run IntelliJ debugger for test cases
+    "rich>=13.9.4",
+    "ruff>=0.9.4",
+]
+
+
+[tool.uv]
+default-groups = ["dev"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+extend-select = ["D", "E", "W", "I", "CPY"]
+ignore = [
+    "D106",
+    # magic methods are self-explaining
+    "D105",
+    # allow to add doc only if not self-explaining or if it is not documented in the doc string of the module
+    "D107",
+    # not everything needs a summary line
+    "D205"
+]
+# TODO: currently need to enable preview for CPY, see https://docs.astral.sh/ruff/rules/missing-copyright-notice/
+preview = true
+flake8-copyright.author = "Dynatrace LLC"
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.format]
+line-ending = "lf"
+docstring-code-format = true
+
+[tool.ruff.lint.per-file-ignores]
+# Do not require doc strings in test files
+"test/*" = ["D"]
+
+[pycodestyle]
+max-line-length = 120
+
+[tool.mypy]
+disallow_untyped_defs = true
+warn_redundant_casts = true
+enable_error_code = [
+    "redundant-self",
+    "possibly-undefined",
+    "truthy-bool",
+    "truthy-iterable",
+    "explicit-override",
+    "unused-ignore",
+    "ignore-without-code"
+]
+strict_equality = true
+disallow_any_unimported = true
+warn_unreachable = true

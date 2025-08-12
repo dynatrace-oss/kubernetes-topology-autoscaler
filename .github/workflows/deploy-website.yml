@@ -1,0 +1,33 @@
+name: Deploy KTA website
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install apturl
+        run: sudo apt-get update && sudo apt-get install -y apturl
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        working-directory: website
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
+
+      - name: Deploy
+        working-directory: website
+        run: |
+          source .venv/bin/activate
+          mkdocs gh-deploy --force

@@ -1,0 +1,52 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kta-quickstart-kstreams-tokenizer
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: kstreams
+      component: tokenizer
+  template:
+    metadata:
+      labels:
+        app: kstreams
+        component: tokenizer
+    spec:
+      # TODO: remove
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - name: tokenizer
+          # TODO: Change on new release
+          image: ghcr.io/dynatrace-oss/kta-quickstart-kstreams:v0.1.0-alpha.1-dev.1
+          imagePullPolicy: Always
+          args: ["tokenizer"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kta-quickstart-kstreams-counter
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: kstreams
+      component: counter
+  template:
+    metadata:
+      labels:
+        app: kstreams
+        component: counter
+    spec:
+      # TODO: remove
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - name: counter
+          # TODO: Change on new release
+          image: ghcr.io/dynatrace-oss/kta-quickstart-kstreams:v0.1.0-alpha.1-dev.1
+          imagePullPolicy: Always
+          args: ["counter"]

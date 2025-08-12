@@ -1,0 +1,118 @@
+#   Copyright (c) 2024 Dynatrace LLC
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
+# yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
+site_name: "Kubernetes Topology Autoscaler"
+site_url: https://dynatrace-oss.github.io/kubernetes-topology-autoscaler/
+repo_name: "GitHub"
+repo_url: https://github.com/dynatrace-oss/kubernetes-topology-autoscaler/
+hooks:
+  - hooks.py
+extra_css:
+  - stylesheets/extra.css
+theme:
+  name: material
+  custom_dir: "docs/overrides"
+  logo: img/logo_header.png
+  user_color_mode_toggle: true
+  color_mode: auto
+  palette:
+    - scheme: dynatrace-light
+      toggle:
+        icon: material/lightbulb-outline
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/lightbulb-on
+        name: Switch to light mode
+  language: en
+  locale: en
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.path
+    - navigation.top
+  icon:
+    repo: fontawesome/brands/github
+nav:
+  - Home:
+      - index.md
+  - Quick Start:
+    - Overview and Setup: quick-start/setup.md
+    - Scale Apache Flink: quick-start/flink.md
+    - Scale Apache Kafka Streams: quick-start/kafka-streams.md
+  - User Guide:
+      - "": user-guide/index.md
+      - Glossary: user-guide/glossary.md
+      - Tutorials: user-guide/tutorials.md
+      - Comparison to Related Projects: user-guide/related-projects.md
+  - API Reference:
+      - "": api-reference/index.md
+      - Kubernetes Operator:
+          - KTAPolicy Custom Resource Definition (CRD): api-reference/kubernetes-operator/kta-policy-crd.md
+      - Python SDK:
+          - core: api-reference/python-sdk/core.md
+          - common: api-reference/python-sdk/common.md
+          - algorithms: api-reference/python-sdk/algorithms.md
+  - Community:
+    - "": community/index.md
+    - Roadmap: community/roadmap.md
+    - Contributor Guide: community/contributor-guide.md
+  - Release Notes: release-notes.md
+  - About: about.md
+markdown_extensions:
+  - attr_list
+  - md_in_html
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - footnotes
+plugins:
+  - search
+  - tags
+  - macros
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: ["../kta-python-sdk/src"]
+          options:
+            docstring_style: google
+            docstring_section_style: table
+            annotations_path: brief
+            show_submodules: true
+            show_if_no_docstring: true
+            show_docstring_modules: true
+            show_docstring_description: true
+            show_docstring_examples: true
+            show_docstring_other_parameters: true
+            show_docstring_raises: true
+            show_docstring_returns: true
+            show_docstring_yields: true
+            show_source: false
+extra:
+  # TODO: Change on new release
+  version: "v0.1.0-alpha.1"
+  generator: false
+  social:
+    - icon: fontawesome/brands/github
+      name: "GitHub repository"
+      link: https://github.com/dynatrace-oss/kubernetes-topology-autoscaler/
+  # version:
+  #   provider: mike
+  #   alias: true
