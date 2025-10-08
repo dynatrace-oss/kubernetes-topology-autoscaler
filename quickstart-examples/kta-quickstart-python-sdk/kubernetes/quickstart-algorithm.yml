@@ -18,7 +18,7 @@ spec:
       containers:
         - name: app
           # TODO: Change on new release
-          image: ghcr.io/dynatrace-oss/kta-quickstart-python-sdk:v0.1.0-alpha.1-dev.1
+          image: ghcr.io/dynatrace-oss/kta-quickstart-python-sdk:v0.1.0-alpha.1
           imagePullPolicy: Always
           ports:
             - containerPort: 8096

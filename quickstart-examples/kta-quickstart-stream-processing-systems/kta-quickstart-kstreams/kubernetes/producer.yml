@@ -20,6 +20,6 @@ spec:
       containers:
         - name: producer
           # TODO: Change on new release
-          image: ghcr.io/dynatrace-oss/kta-quickstart-kstreams:v0.1.0-alpha.1-dev.1
+          image: ghcr.io/dynatrace-oss/kta-quickstart-kstreams:v0.1.0-alpha.1
           imagePullPolicy: Always
           args: ["producer", "1000"]
